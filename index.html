@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learn Chess</title>
+    <style>
+        .chess-board {
+            width: 400px;
+            height: 400px;
+            border: 2px solid #333;
+            display: grid;
+            grid-template-columns: 20px repeat(8, 1fr) 20px;
+            grid-template-rows: 20px repeat(8, 1fr) 20px;
+        }
+        .square {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .white { background-color: #f0d9b5; }
+        .black { background-color: #b58863; }
+        .rank, .file {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            background-color: #e0e0e0;
+        }
+        .selected { background-color: #7fc97f; }
+        #resetBtn {
+            margin-top: 10px;
+            padding: 5px 10px;
+            font-size: 16px;
+        }
+        .button-container {
+            margin-top: 10px;
+        }
+        .button-container button {
+            margin-right: 10px;
+            padding: 5px 10px;
+            font-size: 16px;
+        }
+        .delete-mode { background-color: #ff9999; }
+    </style>
+</head>
+<body>
+    <div class="chess-board" id="chessBoard"></div>
+    <div class="button-container">
+        <button id="deleteBtn">Delete Piece</button>
+        <button id="resetBtn">Reset Board</button>
+    </div>
+
+    <script>
+        const chessBoard = document.getElementById('chessBoard');
+        const resetBtn = document.getElementById('resetBtn');
+        const deleteBtn = document.getElementById('deleteBtn');
+        let selectedPiece = null;
+        let deleteMode = false;
+        const initialBoard = [
+            ['bR', 'bN', 'bB', 'bQ', 'bK', 'bB', 'bN', 'bR'],
+            ['bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP'],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP'],
+            ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']
+        ];
+        let currentBoard = JSON.parse(JSON.stringify(initialBoard));
+
+        function createBoard() {
+            chessBoard.innerHTML = '';
+            const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+            
+            // Add top file labels
+            chessBoard.appendChild(createLabel(''));
+            for (let file of files) {
+                chessBoard.appendChild(createLabel(file));
+            }
+            chessBoard.appendChild(createLabel(''));
+
+            for (let i = 0; i < 8; i++) {
+                // Add left rank label
+                chessBoard.appendChild(createLabel(8 - i));
+
+                for (let j = 0; j < 8; j++) {
+                    const square = document.createElement('div');
+                    square.classList.add('square');
+                    square.classList.add((i + j) % 2 === 0 ? 'white' : 'black');
+                    if (currentBoard[i][j]) {
+                        const img = document.createElement('img');
+                        img.src = `images/${currentBoard[i][j]}.png`;
+                        img.alt = currentBoard[i][j];
+                        img.style.width = '80%';
+                        img.style.height = '80%';
+                        square.appendChild(img);
+                    }
+                    square.addEventListener('click', () => handleSquareClick(i, j));
+                    chessBoard.appendChild(square);
+                }
+
+                // Add right rank label
+                chessBoard.appendChild(createLabel(8 - i));
+            }
+
+            // Add bottom file labels
+            chessBoard.appendChild(createLabel(''));
+            for (let file of files) {
+                chessBoard.appendChild(createLabel(file));
+            }
+            chessBoard.appendChild(createLabel(''));
+        }
+
+        function createLabel(text) {
+            const label = document.createElement('div');
+            label.classList.add(isNaN(text) ? 'file' : 'rank');
+            label.textContent = text;
+            return label;
+        }
+
+        function handleSquareClick(row, col) {
+            const squares = document.querySelectorAll('.square');
+            const index = row * 8 + col;
+
+            if (deleteMode) {
+                currentBoard[row][col] = '';
+                createBoard();
+                return;
+            }
+
+            if (selectedPiece === null) {
+                if (currentBoard[row][col] !== '') {
+                    selectedPiece = { row, col };
+                    squares[index].classList.add('selected');
+                }
+            } else {
+                const selectedIndex = selectedPiece.row * 8 + selectedPiece.col;
+                squares[selectedIndex].classList.remove('selected');
+
+                currentBoard[row][col] = currentBoard[selectedPiece.row][selectedPiece.col];
+                currentBoard[selectedPiece.row][selectedPiece.col] = '';
+
+                createBoard();
+                selectedPiece = null;
+            }
+        }
+
+        function resetBoard() {
+            currentBoard = JSON.parse(JSON.stringify(initialBoard));
+            createBoard();
+            selectedPiece = null;
+            deleteMode = false;
+            deleteBtn.classList.remove('delete-mode');
+        }
+
+        function toggleDeleteMode() {
+            deleteMode = !deleteMode;
+            if (deleteMode) {
+                deleteBtn.classList.add('delete-mode');
+            } else {
+                deleteBtn.classList.remove('delete-mode');
+            }
+            if (selectedPiece) {
+                const squares = document.querySelectorAll('.square');
+                const selectedIndex = selectedPiece.row * 8 + selectedPiece.col;
+                squares[selectedIndex].classList.remove('selected');
+                selectedPiece = null;
+            }
+        }
+
+        resetBtn.addEventListener('click', resetBoard);
+        deleteBtn.addEventListener('click', toggleDeleteMode);
+
+        createBoard();
+    </script>
+</body>
+</html>
